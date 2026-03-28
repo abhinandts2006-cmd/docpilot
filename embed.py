@@ -2,6 +2,7 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
 import hashlib
+import store
 
 def _print_progress(label: str, current: int, total: int, width: int = 28) -> None:
     if total <= 0:
@@ -12,8 +13,8 @@ def _print_progress(label: str, current: int, total: int, width: int = 28) -> No
     end = "\n" if current >= total else "\r"
     print(f"{label}: [{bar}] {current}/{total}", end=end, flush=True)
 
-embeddings = OllamaEmbeddings(model="mxbai-embed-large:335m")
-db_location = "./chroma_langchain_db"
+embeddings = OllamaEmbeddings(model=store.load_config().get("default_embed_model", "mxbai-embed-large:335m"))
+db_location =  store.path / "chroma_langchain_db"
 
 vectorstore = Chroma(
     collection_name="documents",
@@ -43,16 +44,24 @@ def chunk_text(
 def embed_texts(texts: list[str], source: str = "web", batch_size: int = 32):
     documents = []
     ids = []
+    chunk_counter = 0
+    seen_chunks = set()  # Track chunk content to avoid duplicates
     for text in texts:
         for chunk in chunk_text(text):
-            doc_id = hashlib.md5(chunk.encode()).hexdigest()
+            # Skip duplicate chunks
+            if chunk in seen_chunks:
+                continue
+            seen_chunks.add(chunk)
+            
+            doc_id = hashlib.md5(f"{source}:{chunk_counter}:{chunk}".encode()).hexdigest()
             doc = Document(
-                page_content=chunk,
+                page_content=chunk+"source"+source,
                 metadata={"source": source},
                 id=doc_id
             )
             documents.append(doc)
             ids.append(doc_id)
+            chunk_counter += 1
 
     if not documents:
         print(f"No chunks to embed from {source}")
