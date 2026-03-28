@@ -3,16 +3,37 @@ from pathlib import Path
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
+from scrape import scrape_site
 
 EXTENSIONS = {".md", ".py"}
 DB_LOCATION = "./chroma_langchain_db"
-COLLECTION  = "docpilot"
+COLLECTION = "documents"
 EMBEDDINGS  = OllamaEmbeddings(model="mxbai-embed-large:335m")
 
 def clone(url):
     tmp = tempfile.mkdtemp()
     subprocess.run(["git", "clone", "--depth=1", url, tmp], check=True)
     return tmp
+
+def ingest_url(website_url):
+    print(f"Scraping {website_url} ...")
+    store = Chroma(collection_name=COLLECTION,
+                   persist_directory=DB_LOCATION,
+                   embedding_function=EMBEDDINGS)
+    texts = scrape_site(website_url, max_pages=30)
+    docs, ids = [], []
+    for i, text in enumerate(texts):
+        for j, chunk_text in enumerate(chunk(text)):
+            doc_id = f"{website_url}:{i}:{j}"
+            docs.append(Document(
+                page_content=chunk_text,
+                metadata={"source": website_url, "repo": website_url},
+                id=doc_id
+            ))
+            ids.append(doc_id)
+    print(f"Storing {len(docs)} chunks...")
+    store.add_documents(documents=docs, ids=ids)
+    print("Done!")
 
 def read_files(repo_dir):
     for path in Path(repo_dir).rglob("*"):
@@ -23,7 +44,7 @@ def read_files(repo_dir):
             if text:
                 yield str(path.relative_to(repo_dir)), text
 
-def chunk(text, size=800, overlap=100):
+def chunk(text, size=400, overlap=50):
     chunks, start = [], 0
     while start < len(text):
         chunks.append(text[start:start+size])
@@ -56,4 +77,8 @@ def ingest(github_url):
 
 if __name__ == "__main__":
     import sys
-    ingest(sys.argv[1])
+    url = sys.argv[1]
+    if url.startswith("https://github.com"):
+        ingest(url)
+    else:
+        ingest_url(url)

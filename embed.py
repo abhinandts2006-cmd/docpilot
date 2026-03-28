@@ -22,6 +22,7 @@ vectorstore = Chroma(
     embedding_function=embeddings
 )
 
+
 def chunk_text(
     text: str,
     chunk_size: int = 120,
