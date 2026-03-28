@@ -8,11 +8,13 @@ CONFIG_PATH = path / "config.toml"
 
 # Default configuration
 DEFAULT_CONFIG = {
-    "default_embed_model": (ollama.list().models)[0].model if ollama.list().models else "mxbai-embed-large:335m",
-    "default_model": (ollama.list().models)[1].model if ollama.list().models else "llama2",
+    "default_embed_model": (ollama.list().models)[1].model if ollama.list().models else "mxbai-embed-large:335m",
+    "default_model": (ollama.list().models)[0].model if ollama.list().models else "llama3.2",
     "db_path": str(path / "chroma_langchain_db"),
     "log_level": "info",
 }
+
+
 
 def init_config():
     """Initialize config file with defaults if it doesn't exist."""
