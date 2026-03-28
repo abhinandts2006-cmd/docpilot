@@ -16,7 +16,7 @@ app = typer.Typer()
 @app.command()
 def ingest(
     source: str,
-    max_pages: int = typer.Option(100, "--max-pages", "-p", help="Max pages to crawl for websites."),
+    max_pages: int = typer.Option(20, "--max-pages", "-p", help="Max pages to crawl for websites."),
     workers: int = typer.Option(16, "--workers", "-w", help="Concurrent workers for scraping."),
 ):
     if source.endswith("sitemap.xml"):
