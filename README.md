@@ -192,6 +192,47 @@ docpilot model list
 - Use `docpilot speed quality` for deeper context
 - Re-ingest with higher page limits or better source coverage
 
+## Use Cases
+Query large documentation sets directly from the terminal without switching context
+Build a fully offline documentation assistant for development workflows
+Search and retrieve information from local PDFs and CSV datasets
+Quickly explore and understand unfamiliar codebases or libraries
+Create a personal knowledge base from websites and technical resources
+
+## Project Structure
+
+docpilot/
+├── cli/              # Command-line interface definitions
+├── ingest/           # Crawling, parsing, and ingestion logic
+├── embeddings/       # Embedding generation using Ollama
+├── retrieval/        # Vector search and ranking
+├── config/           # Configuration management
+├── db/               # Local vector storage (Chroma)
+└── main.py           # Entry point
+
+## Roadmap
+
+[ ] Support additional file formats (Markdown, DOCX, TXT)
+[ ] Incremental indexing for faster updates
+[ ] Improved retrieval and re-ranking strategies
+[ ] Multi-project workspace support
+[ ] Optional lightweight web interface
+[ ] Better source attribution in answers
+
+## Team
+
+Abhinand T S — Documentation
+README, setup guide, and usage examples
+
+Gowri — Data Ingestion
+Document loading, chunking, embeddings, and storage in ChromaDB
+
+Aswin — CLI Development
+Command-line interface implementation using Typer and workflow integration
+
+Rose — Testing
+Validation of ingestion and retrieval, including edge case handling
+
 ## Contributing
 
 Contributions are welcome. If you are using docpilot in FOSS Hack or related projects, open issues and PRs with clear reproduction steps and expected behavior.
