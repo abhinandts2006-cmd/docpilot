@@ -193,31 +193,42 @@ docpilot model list
 - Re-ingest with higher page limits or better source coverage
 
 ## Use Cases
+
 Query large documentation sets directly from the terminal without switching context
-Build a fully offline documentation assistant for development workflows
+
+Build a fully offline documentation assistant 
+for development workflows
+
 Search and retrieve information from local PDFs and CSV datasets
+
 Quickly explore and understand unfamiliar codebases or libraries
+
 Create a personal knowledge base from websites and technical resources
 
 ## Project Structure
 
-docpilot/
+```bashdocpilot/
 ├── cli/              # Command-line interface definitions
 ├── ingest/           # Crawling, parsing, and ingestion logic
 ├── embeddings/       # Embedding generation using Ollama
 ├── retrieval/        # Vector search and ranking
 ├── config/           # Configuration management
 ├── db/               # Local vector storage (Chroma)
-└── main.py           # Entry point
+└── main.py           # Entry point```
 
 ## Roadmap
 
-[ ] Support additional file formats (Markdown, DOCX, TXT)
-[ ] Incremental indexing for faster updates
-[ ] Improved retrieval and re-ranking strategies
-[ ] Multi-project workspace support
-[ ] Optional lightweight web interface
-[ ] Better source attribution in answers
+Support additional file formats (Markdown, DOCX, TXT)
+
+Incremental indexing for faster updates
+
+Improved retrieval and re-ranking strategies
+
+Multi-project workspace support
+
+Optional lightweight web interface
+
+Better source attribution in answers
 
 ## Team
 
