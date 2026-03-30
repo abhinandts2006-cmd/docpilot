@@ -92,6 +92,10 @@ docpilot ingest "https://docs.python.org/3/" --workers 24 --max-pages 100 --batc
 # Optional: override auto selection
 docpilot ingest "https://docs.python.org/3/" --workers 24 --max-pages 100 --batch-size 64 --embed-workers 8
 
+# Ingest a local PDF or CSV file
+docpilot ingest "./docs/guide.pdf"
+docpilot ingest "./data/faqs.csv"
+
 # Ask a question
 docpilot ask "How do I create a virtual environment in Python?"
 ```

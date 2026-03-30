@@ -1,5 +1,8 @@
 import ollama
 import typer
+import pandas as pd
+import importlib
+from pathlib import Path
 from chat import askai
 from scrape import scrape_sitemap, scrape_site
 from embed import embed_texts
@@ -11,6 +14,35 @@ store.init_config()
 app = typer.Typer()
 
 
+def loadpdf(file_path: Path) -> list[str]:
+    try:
+        PdfReader = importlib.import_module("pypdf").PdfReader
+    except Exception:
+        print("PDF support is unavailable. Install dependencies again to include pypdf.")
+        return []
+
+    reader = PdfReader(str(file_path))
+    texts: list[str] = []
+    for page in reader.pages:
+        page_text = (page.extract_text() or "").strip()
+        if page_text:
+            texts.append(page_text)
+    return texts
+
+
+def _load_csv_texts(file_path: Path) -> list[str]:
+    df = pd.read_csv(file_path, sep=None, engine="python")
+    if df.empty:
+        return []
+
+    texts: list[str] = []
+    for _, row in df.fillna("").iterrows():
+        row_text = " | ".join(f"{col}: {row[col]}" for col in df.columns)
+        if row_text.strip():
+            texts.append(row_text)
+    return texts
+
+
 @app.command()
 def ingest(
     source: str,
@@ -19,13 +51,31 @@ def ingest(
     batch_size: int = typer.Option(32, "--batch-size", "-b", min=1, help="Embedding batch size for faster ingest."),
     embed_workers: int = typer.Option(0, "--embed-workers", "-e", min=0, help="Threads for chunking before embedding (0 = auto)."),
 ):
+    """Ingest a website, sitemap, PDF, or CSV by chunking and embedding content."""
     if source.endswith("sitemap.xml"):
         texts = scrape_sitemap(source, max_workers=workers)
     elif source.startswith("http"):
         texts = scrape_site(source, max_pages=max_pages, max_workers=workers)
     else:
-        print("Unsupported source")
-        return
+        source_path = Path(source).expanduser().resolve()
+        if not source_path.exists() or not source_path.is_file():
+            print("Unsupported source")
+            return
+
+        suffix = source_path.suffix.lower()
+        if suffix == ".pdf":
+            texts = loadpdf(source_path)
+        elif suffix == ".csv":
+            texts = _load_csv_texts(source_path)
+        else:
+            print("Unsupported local file type. Use .pdf or .csv")
+            return
+
+        if not texts:
+            print("No extractable text found in file.")
+            return
+        source = str(source_path)
+
     embed_texts(texts, source=source, batch_size=batch_size, embed_workers=embed_workers)
     print("Ingestion complete.")
 
@@ -38,6 +88,7 @@ def ask(question: str):
 
 @app.command()
 def model(action: str, model_name = typer.Argument(None, help="Name of the model to set")):
+    """List available Ollama models or set a default model for Q&A or embeddings."""
     models = ollama.list()
     config = store.load_config()
     """List available models or set a default model."""
