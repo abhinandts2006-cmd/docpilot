@@ -62,6 +62,48 @@ def model(action: str, model_name = typer.Argument(None, help="Name of the model
         print("Unsupported action. Use 'list' to see available models.")
 
 
+@app.command()
+def speed(profile: str = typer.Argument("balanced", help="fast, balanced, or quality")):
+    """Set reply speed profile by tuning retrieval and Ollama generation settings."""
+    config = store.load_config()
+
+    profiles = {
+        "fast": {
+            "retrieval_k": 4,
+            "max_context_chars": 2200,
+            "max_doc_chars": 500,
+            "num_predict": 128,
+            "num_ctx": 1536,
+            "temperature": 0.1,
+        },
+        "balanced": {
+            "retrieval_k": 6,
+            "max_context_chars": 3500,
+            "max_doc_chars": 700,
+            "num_predict": 192,
+            "num_ctx": 2048,
+            "temperature": 0.1,
+        },
+        "quality": {
+            "retrieval_k": 10,
+            "max_context_chars": 5500,
+            "max_doc_chars": 1000,
+            "num_predict": 320,
+            "num_ctx": 4096,
+            "temperature": 0.2,
+        },
+    }
+
+    selected = profiles.get(profile.lower())
+    if selected is None:
+        print("Unsupported profile. Use: fast, balanced, or quality")
+        return
+
+    config.update(selected)
+    store.save_config(config)
+    print(f"Speed profile set to: {profile.lower()}")
+
+
 
 if __name__ == "__main__":
     app()

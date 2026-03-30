@@ -83,6 +83,9 @@ docpilot model list
 docpilot model set qwen2.5:latest
 docpilot model setembed mxbai-embed-large:335m
 
+# Tune answer speed/quality
+docpilot speed fast
+
 # Ingest a docs site (embed workers auto-selected)
 docpilot ingest "https://docs.python.org/3/" --workers 24 --max-pages 100 --batch-size 64
 
