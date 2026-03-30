@@ -33,6 +33,8 @@ DEFAULT_CONFIG = {
     "temperature": 0.1,
 }
 
+
+
 def init_config():
     """Initialize config file with defaults if it doesn't exist."""
     if not CONFIG_PATH.exists():
