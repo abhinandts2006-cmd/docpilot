@@ -214,7 +214,8 @@ Create a personal knowledge base from websites and technical resources
 ├── retrieval/        # Vector search and ranking
 ├── config/           # Configuration management
 ├── db/               # Local vector storage (Chroma)
-└── main.py           # Entry point```
+└── main.py           # Entry point
+```
 
 ## Roadmap
 
