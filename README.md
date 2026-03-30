@@ -1,50 +1,38 @@
 # docpilot
 
-Ask your docs anything from your terminal using a local RAG pipeline.
+Local-first CLI for document ingestion and question answering with Ollama + Chroma.
 
-## What it does
+docpilot is a FOSS Hack project focused on practical developer workflows: ingest docs quickly, query them from terminal, and keep everything on-device.
 
-You point docpilot at a documentation website. It scrapes the pages, breaks the text into chunks, converts each chunk into a vector embedding using Ollama, and stores everything in ChromaDB. When you ask a question, it finds the most semantically relevant chunks and feeds them to a local LLM to generate an answer.
+## Highlights
 
-No cloud. No API keys. Runs entirely on your machine.
+- Local RAG pipeline (no cloud APIs required)
+- Website and sitemap ingestion
+- Local file ingestion for PDF and CSV
+- Concurrent crawling and threaded chunk preparation
+- Configurable speed profiles for faster or higher-quality answers
+- Simple CLI designed for fast iteration
 
-## How it works (step by step)
+## Architecture
 
+```text
+Source (URL / Sitemap / PDF / CSV)
+    -> Extract text
+    -> Chunk
+    -> Embed (Ollama embeddings)
+    -> Store vectors (Chroma)
+
+Question
+    -> Retrieve top matches
+    -> Compose context
+    -> Generate answer (Ollama chat model)
 ```
-Docs URL → Scraper → Chunker → Ollama Embeddings → ChromaDB
-                                                         ↓
-Your Question → Embed Question → Retrieve Top-K Chunks → LLM → Answer
-```
-
-1. **Scrape** — crawls the site concurrently, respects `--max-pages`
-2. **Chunk** — splits text into smaller pieces so embeddings stay focused
-3. **Embed** — converts each chunk to a vector using an Ollama embedding model
-4. **Store** — saves vectors + original text in ChromaDB at `~/.docpilot/chroma`
-5. **Retrieve** — at query time, embeds your question and finds the closest chunks
-6. **Answer** — sends retrieved chunks as context to a local LLM
-
-## Why these design choices
-
-**Why local-first?**
-No external API dependency, no cost per query, and your docs stay on your machine.
-
-**Why vector search instead of keyword search?**
-Semantic search finds relevant chunks even when the exact words don't match. "How do I make a venv" still finds chunks about `python -m venv`.
-
-**Why chunking?**
-LLMs have context limits. Chunking keeps each piece small enough to embed accurately and fit into the prompt without overflow.
-
-**Why ChromaDB?**
-Handles both vector storage and similarity search in one local library. No separate database server needed.
-
-**Why Ollama?**
-Runs models locally. Both the embedding model and the chat model run on your machine via Ollama.
 
 ## Requirements
 
 - Python 3.12+
-- [Ollama](https://ollama.com/) installed and running
-- A chat model and an embedding model pulled in Ollama
+- Ollama installed and running: https://ollama.com/
+- At least one chat model and one embedding model pulled locally
 
 ```bash
 ollama pull qwen2.5:latest
@@ -54,76 +42,144 @@ ollama pull mxbai-embed-large:335m
 ## Installation
 
 ```bash
-# Recommended — installs as a global CLI tool
+# Standard install
 uv tool install .
 
-# Development — editable install, picks up code changes with uv run
-pip install -e .
+# Development mode (recommended while iterating)
+uv tool install --editable .
 ```
 
-## First run
-
-On first run, docpilot creates `~/.docpilot/config.toml` with defaults:
-
-```toml
-default_model = "qwen2.5:latest"
-default_embed_model = "mxbai-embed-large:335m"
-db_path = "~/.docpilot/chroma"
-```
-
-You can change these via CLI without editing the file directly.
-
-## Usage
+## Quick Start
 
 ```bash
-# See available Ollama models
+# 1) Pick models
 docpilot model list
-
-# Set which model to use for chat and embeddings
 docpilot model set qwen2.5:latest
 docpilot model setembed mxbai-embed-large:335m
 
-# Tune answer speed/quality
+# 2) Optional: set response profile
 docpilot speed fast
 
-# Ingest a docs site (embed workers auto-selected)
-docpilot ingest "https://docs.python.org/3/" --workers 24 --max-pages 100 --batch-size 64
+# 3) Ingest content
+docpilot ingest "https://docs.python.org/3/" --max-pages 100 --workers 24
 
-# Optional: override auto selection
-docpilot ingest "https://docs.python.org/3/" --workers 24 --max-pages 100 --batch-size 64 --embed-workers 8
-
-# Ingest a local PDF or CSV file
-docpilot ingest "./docs/guide.pdf"
-docpilot ingest "./data/faqs.csv"
-
-# Ask a question
-docpilot ask "How do I create a virtual environment in Python?"
+# 4) Ask questions
+docpilot ask "How do I create a virtual environment?"
 ```
 
-## Trade-offs worth knowing
+## CLI Reference
 
-**Chunking size**
-Smaller chunks = better retrieval precision but may lose surrounding context. Larger chunks = more context but embeddings get noisy.
+### ingest
 
-**Top-K retrieval**
-Higher K means more chunks sent to the LLM = better recall but larger prompt and slower response. Lower K is faster but may miss relevant info.
+Ingest content into the local vector database.
 
-**Concurrency (`--workers`)**
-More workers = faster scraping but higher load on the target server and your machine. Default 16 is a reasonable middle ground.
+```bash
+docpilot ingest SOURCE [OPTIONS]
+```
 
-**Embedding overflow**
-If a chunk is too long for the embedding model's context window, docpilot automatically splits it and retries rather than failing the whole ingest.
+`SOURCE` can be:
+
+- Website URL (for crawl): `https://example.com/docs`
+- Sitemap URL: `https://example.com/sitemap.xml`
+- Local PDF file: `./docs/guide.pdf`
+- Local CSV file: `./data/faq.csv`
+
+Options:
+
+- `--max-pages`, `-p` (default: `20`): max pages to crawl for websites
+- `--workers`, `-w` (default: `16`): concurrent crawl workers
+- `--batch-size`, `-b` (default: `32`): embedding batch size
+- `--embed-workers`, `-e` (default: `0`): threads for chunk preparation (`0` = auto)
+
+Examples:
+
+```bash
+docpilot ingest "https://docs.python.org/3/" --max-pages 100 --workers 24 --batch-size 64
+docpilot ingest "./docs/guide.pdf"
+docpilot ingest "./data/reviews.csv"
+```
+
+### ask
+
+Query the ingested knowledge base.
+
+```bash
+docpilot ask "What is MongoDB used for?"
+```
+
+### model
+
+Manage Ollama model selection.
+
+```bash
+docpilot model list
+docpilot model set <chat-model>
+docpilot model setembed <embedding-model>
+```
+
+### speed
+
+Set answer-generation profile.
+
+```bash
+docpilot speed [fast|balanced|quality]
+```
+
+- `fast`: lower latency, shorter context/output
+- `balanced`: default trade-off
+- `quality`: larger context/output, slower responses
+
+## Configuration
+
+Configuration is stored at `~/.docpilot/config.toml`.
+
+Common keys include:
+
+- `default_model`
+- `default_embed_model`
+- `db_path`
+- `retrieval_k`
+- `max_context_chars`
+- `max_doc_chars`
+- `num_predict`
+- `num_ctx`
+- `num_thread`
+- `temperature`
+
+## Performance Notes
+
+- Use `docpilot speed fast` for lower latency answers.
+- Increase `--workers` for faster crawling.
+- Increase `--batch-size` when your machine can handle larger embedding batches.
+- Keep `--embed-workers 0` to auto-tune chunking thread count.
 
 ## Troubleshooting
 
-**`No such option: --workers`** — package is stale, reinstall:
+### Command changes not showing
+
+Reinstall in editable mode during development:
+
 ```bash
-uv tool install . --force
+uv tool install --editable .
 ```
 
-**Ollama model not found** — run `docpilot model list` and set an available model.
+### Model not found
 
-**Empty answers after ingest** — ingest may have failed silently. Re-run ingest and check for errors.
+List local models and set valid names:
+
+```bash
+docpilot model list
+```
+
+### Empty or weak answers
+
+- Ensure ingestion completed successfully
+- Use `docpilot speed quality` for deeper context
+- Re-ingest with higher page limits or better source coverage
+
+## Contributing
+
+Contributions are welcome. If you are using docpilot in FOSS Hack or related projects, open issues and PRs with clear reproduction steps and expected behavior.
 
 ## License
 
