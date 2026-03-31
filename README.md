@@ -192,6 +192,20 @@ docpilot model list
 - Use `docpilot speed quality` for deeper context
 - Re-ingest with higher page limits or better source coverage
 
+## Testing
+
+Basic testing was performed by ingesting sample data and querying it through the CLI.
+
+Example:
+
+docpilot ingest "./docs/sample.pdf"
+docpilot ask "What is this document about?"
+
+Checks performed:
+- Ingestion completes without errors
+- CLI commands execute correctly
+- Retrieved answers are relevant to the source content
+
 ## Use Cases
 
 Query large documentation sets directly from the terminal without switching context
