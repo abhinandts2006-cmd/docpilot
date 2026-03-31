@@ -245,6 +245,11 @@ Command-line interface implementation using Typer and workflow integration
 Rose — Testing
 Validation of ingestion and retrieval, including edge case handling
 
+## Video demonstration 
+```bash
+https://youtu.be/5W3jA0Z-glI?si=B8L3EG2Q6j4G3bZ1
+```
+
 ## Contributing
 
 Contributions are welcome. If you are using docpilot in FOSS Hack or related projects, open issues and PRs with clear reproduction steps and expected behavior.
